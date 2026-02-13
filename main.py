@@ -17,6 +17,8 @@ bot = Bot(token=os.getenv('TOKEN'))
 dp = Dispatcher()
 dp.include_router(user_router)
 
+dp.update.middleware(DataBaseSession(session_pool=session_maker))
+
 async def on_startup(bot):
 
     # await drop_db()
@@ -27,18 +29,19 @@ async def on_startup(bot):
 async def on_shutdown(bot):
     print('бот лег')
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+)
 
 async def main():
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
-    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+    await dp.start_polling(bot, drop_pending_updates=True)
     await bot.delete_webhook(drop_pending_updates=True)
 
 
-    dp.update.middleware(DataBaseSession(session_pool=session_maker))
-
-    logging.basicConfig(level=logging.INFO)
 
 try:
     asyncio.run(main())
